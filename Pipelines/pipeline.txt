@@ -1,0 +1,19 @@
+in order for the pipeline to work first there is a folder lets say imagenet, and that
+folder has a train folder, that folder also have different folders containing
+a group of images which is why we use image folder
+
+imagenet/
+        train/
+                folder img/
+                    img 1
+                    img 2
+                    img 3
+                folder img/
+                    img 1
+                    img 2
+                    img 3
+                    img 4
+you are going to need at least 200gb of memory for the dataset, I am currently working on the
+Wikiart datatse, they also have an API to get information as well for free, im trying
+to connect to it, but its being a pain
+(imagenet you are going to need to download) going to mention on the next meeting
