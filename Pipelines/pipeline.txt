@@ -17,3 +17,7 @@ you are going to need at least 200gb of memory for the dataset, I am currently w
 Wikiart datatse, they also have an API to get information as well for free, im trying
 to connect to it, but its being a pain
 (imagenet you are going to need to download) going to mention on the next meeting
+
+to install
+
+pip install -r requirements.txt
