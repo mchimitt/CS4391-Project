@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 # Ensure the code runs as expected on Windows with multiprocessing
 if __name__ == "__main__":
 
-    imagenet_dir = 'imagenet'
+    imagenet_dir = 'Wikiart' #name of the folder
     if not os.path.exists(imagenet_dir):
         print(f'{imagenet_dir} does not exist')
     else:
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     ])
 
     # Open the training dataset
-    train_dir = os.path.join(imagenet_dir, 'train')
+    train_dir = os.path.join(imagenet_dir, 'dataset')
     train_dataset = datasets.ImageFolder(train_dir, transform=transform)
 
     # Create DataLoader
