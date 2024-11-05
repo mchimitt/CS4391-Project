@@ -14,12 +14,12 @@ Wikiart/
                     img 3
                     img 4
 
-Word File/
+ExcelSheets/
 classes.csv
 wclasses.csv
 
-
 pipeline python
+
 you are going to need at least 40gb of memory for the dataset, I am currently working on the
 Wikiart dataset
 when you extract make sure to move "classes.csv
