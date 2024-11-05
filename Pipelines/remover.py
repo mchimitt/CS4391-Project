@@ -2,7 +2,7 @@ import os
 import shutil
 
 # Path to the WikiArt dataset
-data_dir = 'Wikiart/dataset'
+data_dir = 'dataset'
 
 
 # List of the 13 most popular genres to keep
