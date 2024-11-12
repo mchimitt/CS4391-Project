@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 # Ensure the code runs as expected on Windows with multiprocessing
 if __name__ == "__main__":
 
-    imagenet_dir = 'Wikiart' #name of the folder
+    imagenet_dir = '../Wikiart'  #name of the folder
     if not os.path.exists(imagenet_dir):
         print(f'{imagenet_dir} does not exist')
     else:
