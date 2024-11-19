@@ -4,9 +4,11 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import models
 import time
+from tqdm import tqdm
+
 
 class AlexNet():
-    def __init__(self, num_epochs=10, learn_rate=0.001, batch_size=128, max_train_samples=None, dir='..\\Pipelines\\Wikiart\\dataset'):
+    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, decay=1e-4):
         # use GPU if one exists and is available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
@@ -26,22 +28,22 @@ class AlexNet():
 
         self.num_epochs = num_epochs
 
-        self.model_save_path = '..\\Models\\Supervised'
+        self.model_save_path = save_dir
         
         # Set up loss function and optimizer
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=learn_rate)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=learn_rate, weight_decay=decay)
 
     def train(self):
-        print("Starting training...")
+        # print("Starting training...")
         total_batches = len(self.train_loader)
         start_time = time.time
         for epoch in range(self.num_epochs):
             self.model.train()  # Set model to training mode
             running_loss = 0.0
             curr_batch = 1
-            for images, labels in self.train_loader:
-                print(f"Batch {curr_batch}/{total_batches}")
+            for images, labels in tqdm(self.train_loader, desc=f"Training Epoch {epoch+1}"):
+                # print(f"Batch {curr_batch}/{total_batches}")
                 images, labels = images.to(self.device), labels.to(self.device)
                 # print(images)
                 # Zero the gradients
@@ -85,7 +87,7 @@ class AlexNet():
         total = 0
         
         with torch.no_grad():
-            for images, labels in data_loader:
+            for images, labels in tqdm(data_loader, desc="Running Test"):
                 images, labels = images.to(self.device), labels.to(self.device)
                 outputs = self.model(images)
                 _, predicted = torch.max(outputs, 1)
