@@ -6,7 +6,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from PIL import Image
 
-# Define CNN architecture
+
 class GenreClassifierCNN(nn.Module):
     def __init__(self, num_classes):
         super(GenreClassifierCNN, self).__init__()
@@ -25,7 +25,7 @@ class GenreClassifierCNN(nn.Module):
         x = self.fc2(x)
         return x
 
-# Function to load dataset and return a DataLoader
+
 def get_data_loader(data_dir, batch_size=32):
     transform = transforms.Compose([
         transforms.Resize((128, 128)),
@@ -103,7 +103,7 @@ def main():
         torch.save(model.state_dict(), model_path)
         print(f"Model saved to {model_path}.")
 
-    # Predict a single image
+
     transform = transforms.Compose([
         transforms.Resize((128, 128)),
         transforms.ToTensor(),
@@ -112,6 +112,6 @@ def main():
     predicted_genre = predict_image(model, test_image_path, transform, class_names, device)
     print(f"The genre is: {predicted_genre}")
 
-# Run the main function
+
 if __name__ == "__main__":
     main()
