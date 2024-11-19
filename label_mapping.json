@@ -1,0 +1,29 @@
+{
+    "label_mapping": {
+        "Abstract_Expressionism": 0,
+        "Baroque": 1,
+        "Cubism": 2,
+        "Expressionism": 3,
+        "Impressionism": 4,
+        "Minimalism": 5,
+        "Pop_Art": 6,
+        "Realism": 7,
+        "Rococo": 8,
+        "Romanticism": 9,
+        "Symbolism": 10
+    },
+    "num_classes": 11,
+    "class_names": [
+        "Abstract_Expressionism",
+        "Baroque",
+        "Cubism",
+        "Expressionism",
+        "Impressionism",
+        "Minimalism",
+        "Pop_Art",
+        "Realism",
+        "Rococo",
+        "Romanticism",
+        "Symbolism"
+    ]
+}
