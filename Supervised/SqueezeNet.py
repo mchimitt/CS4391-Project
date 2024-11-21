@@ -18,7 +18,13 @@ class SqueezeNet():
         print("Dataset has been loaded")
 
         # Initialize the SqueezeNet model and modify the classifier for the dataset's number of classes
+        
+        ## uncomment this for pretrained weights
         self.model = models.squeezenet1_1(weights=models.SqueezeNet1_1_Weights.DEFAULT)
+        
+        # uncomment this for no pretrained weights
+        # self.model = models.squeezenet1_1()
+    
         self.model.classifier[1] = nn.Sequential(nn.Dropout(dropout), nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1)))
         # self.model.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1))
         self.model.num_classes = num_classes

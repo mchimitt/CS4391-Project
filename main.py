@@ -15,14 +15,16 @@ def main():
     model_dir = project_root / "Models" / "Supervised"
 
 
-    # an = AlexNet(data_dir, model_dir, 20000, 256, 20, 0.00001, 5e-4)
-    # an.train()
-    # an.test()
+    an = AlexNet(data_dir, model_dir, 15000, 512, 30, 0.0001, 5e-4)
+    an.train()
+    an.test()
 
     # print("Running SqueezeNet")
-    # sn = SqueezeNet(data_dir, model_dir, 20000, 256, 20, 0.00001, 0.5, 5e-4)
-    # # current best:15000, 512, 20, 0.0001, 0.5, 5e-4 ---> 56.31% train 53.51% test
-    # # 5, 0.0001, 512, 0.00001, 1e-8, 15000
+    # sn = SqueezeNet(data_dir, model_dir, 15000, 512, 30, 0.0001, 0.5, 5e-4)
+    # # Best Hyperparameters: 
+    # # train samples: 15000, batch size: 512, epochs: 30, lr: 0.0001, dropout: 0.5, decay: 5e-4
+    # # validation accuracy: 57.92%
+    # # test accuracy: 58.32%
     # sn.train()
     # sn.test()
 
@@ -33,9 +35,9 @@ def main():
 
 
     # autoencoder
-    classifier = UnsupervisedClassification(dir=data_dir, batch_size=32) #, model_path='./autoencoder_model.pth')
-    classifier.train_autoencoder(epochs=10)
-    classifier.evaluate()
+    # classifier = UnsupervisedClassification(dir=data_dir, batch_size=32) #, model_path='./autoencoder_model.pth')
+    # classifier.train_autoencoder(epochs=10)
+    # classifier.evaluate()
 
 
 if __name__ == "__main__":
