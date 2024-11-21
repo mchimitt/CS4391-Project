@@ -5,6 +5,7 @@ import torch.optim as optim
 from torchvision import models
 import time
 from pathlib import Path
+from tqdm import tqdm
 
 class SqueezeNet():
     def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, dropout=0.5, decay=1e-4):
@@ -42,8 +43,8 @@ class SqueezeNet():
             running_loss = 0.0
             curr_batch = 1
             
-            for images, labels in self.train_loader:
-                print(f"Batch {curr_batch}/{total_batches}")
+            for images, labels in tqdm(self.train_loader, desc=f"Training Epoch {epoch + 1}"):
+                # print(f"Batch {curr_batch}/{total_batches}")
                 images, labels = images.to(self.device), labels.to(self.device)
 
                 # Zero the gradients
@@ -82,7 +83,7 @@ class SqueezeNet():
         total = 0
         
         with torch.no_grad():
-            for images, labels in data_loader:
+            for images, labels in tqdm(data_loader, "Testing"):
                 images, labels = images.to(self.device), labels.to(self.device)
                 outputs = self.model(images)
                 _, predicted = torch.max(outputs, 1)

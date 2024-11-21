@@ -2,106 +2,113 @@ from Pipelines.get_data import get_data
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from torchvision import transforms
-from torch.utils.data import DataLoader
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, silhouette_score
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 import os
 from PIL import Image
 
-# Extract the features of the images and cluster based on these features
+# Set the device to GPU if available
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Using device: {device}")
+
+# Feature Extractor Class
 class FeatureExtractor():
     def __init__(self):
-        # use a pretrained model (resnet in this case)
-        self.model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
-        # remove the last layer which classifies, we just want the features
+        # Use a pretrained VGG19 model with batch normalization
+        self.model = models.vgg19_bn(weights=models.VGG19_BN_Weights.IMAGENET1K_V1)
+        # Remove the classification layer, keep features
         self.model.fc = nn.Identity()
         self.model.eval()
+        
+        # Move the model to the device
+        self.model = self.model.to(device)
 
     def extract_features(self, image):
         with torch.no_grad():
+            # Ensure image tensor is on the same device as the model
+            image = image.to(device).float()
             features = self.model(image)
         return features
 
 class KMeansClassifier():
-    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset',  max_train_samples=None, batch_size=128):
-        # maybe add this to the parameters: save_dir='Models\\Supervised\\',
-        
+    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', max_train_samples=None, batch_size=128):
         print("Loading the dataset")
         # Load the dataset
         self.train_loader, self.val_loader, self.test_loader, num_classes = get_data(dir, batch_size, max_train_samples)
         print("Dataset has been loaded")
 
-        # the number of clusters is the number of classes that we have
+        # Fixed number of clusters based on the number of classes
         self.n_clusters = num_classes
         self.batch_size = batch_size
-        # create the feature extractor
         self.feature_extractor = FeatureExtractor()
-        # instaniate the cluster model
-        self.kmeans = KMeans(n_clusters=self.n_clusters, random_state=42)
+
+        # Instantiate the KMeans model
+        self.kmeans = KMeans(n_clusters=self.n_clusters, init='k-means++', random_state=42)
 
     def extract(self, dataloader):
-        # storing features and labels
         all_features = []
         all_labels = []
 
-        # extracting each feature from the dataloader
         for images, labels in tqdm(dataloader, desc="Extracting Features"):
-            # extract the features
-            features = self.feature_extractor.extract_features(images)
-            # add the features to the feature list
-            all_features.append(features.numpy())
-            # add the label to the labels list
-            all_labels.extend(labels.numpy())
+            images = images.to(device)  # Move images to GPU
+            labels = labels.to(device)
 
-        all_features = np.vstack(all_features)
-        # return the list of features and labels
+            # Extract features
+            features = self.feature_extractor.extract_features(images)
+
+            # Flatten features to 2D array (batch_size, num_features)
+            all_features.append(features.view(features.size(0), -1).cpu().numpy())  # Move to CPU for numpy compatibility
+            all_labels.extend(labels.cpu().numpy())  # Same for labels
+
+        all_features = np.vstack(all_features)  # Stack all features vertically (samples, features)
         return all_features, np.array(all_labels)
     
     def fit(self):
-        
-        # get the features
+        # Extract features from the training set
         self.train_features, self.train_labels = self.extract(self.train_loader)
-        
-        # use PCA to reduce dimensionality
-        # pca = PCA(n_components=50)
-        # features_pca = pca.fit_transform(self.train_features)
 
-        # Using our kmeans model to fit the features
+        # Normalize features using StandardScaler
+        scaler = StandardScaler()
+        self.train_features = scaler.fit_transform(self.train_features)
+
+        # Reduce dimensionality with PCA (optional: you can change n_components)
+        pca = PCA(n_components=50)  # Keep more components if necessary
+        self.train_features = pca.fit_transform(self.train_features)
+
+        # Fit the KMeans model on the training features
         print("Fitting KMeans...")
-        # self.kmeans.fit(features_pca)
         self.kmeans.fit(self.train_features)
 
     def predict(self):
+        # Use the same PCA and scaler applied during fitting
+        test_features = self.train_features  # Using the same training features for clustering
         
-        # extract the features 
-        # features, labels = self.extract(self.test_loader)
-        
-        # Apply PCA before predicting (same as used during fitting)
-        pca = PCA(n_components=50)
-        # features_pca = pca.fit_transform(self.train_features)
-        
-        # do prediction
-        # cluster_labels = self.kmeans.predict(features_pca)
-        cluster_labels = self.kmeans.predict(self.train_features)
-        return cluster_labels, self.train_labels
-    
-    def evaluate(self):
-        cluster_labels, true_labels = self.predict()
+        # Predict cluster labels
+        cluster_labels = self.kmeans.predict(test_features)
+        return cluster_labels
 
-        # Adjust cluster labels to match true labels (using majority voting)
+    def evaluate(self):
+        # Get predictions from the model
+        cluster_labels = self.predict()
+
+        # Map clusters to true labels using majority voting
         cluster_to_true_label = {}
         for cluster in np.unique(cluster_labels):
             mask = (cluster_labels == cluster)
-            most_common = np.bincount(true_labels[mask]).argmax()
+            most_common = np.bincount(self.train_labels[mask]).argmax()
             cluster_to_true_label[cluster] = most_common
 
         adjusted_labels = [cluster_to_true_label[cluster] for cluster in cluster_labels]
-        accuracy = accuracy_score(true_labels, adjusted_labels)
+        accuracy = accuracy_score(self.train_labels, adjusted_labels)
+        accuracy *= 100  # Convert to percentage
+        print(f"Clustering Accuracy: {accuracy:.2f}%")
 
-        print(f"Clustering Accuracy: {accuracy:.4f}")
-        return accuracy
+        # Evaluate clustering quality using Silhouette Score (higher is better)
+        silhouette_avg = silhouette_score(self.train_features, cluster_labels)
+        print(f"Silhouette Score: {silhouette_avg:.4f}")
+
+        return accuracy, silhouette_avg

@@ -1,2 +1,4 @@
 Wikiart/
 *.pyc
+Models/
+Models/Supervised/

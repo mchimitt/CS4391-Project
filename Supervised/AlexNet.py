@@ -28,7 +28,7 @@ class AlexNet():
 
         self.num_epochs = num_epochs
 
-        self.model_save_path = save_dir
+        self.model_save_path = save_dir / 'alexnet_model.pth'
         
         # Set up loss function and optimizer
         self.criterion = nn.CrossEntropyLoss()
@@ -37,7 +37,7 @@ class AlexNet():
     def train(self):
         # print("Starting training...")
         total_batches = len(self.train_loader)
-        start_time = time.time
+        start_time = time.time()
         for epoch in range(self.num_epochs):
             self.model.train()  # Set model to training mode
             running_loss = 0.0
@@ -79,6 +79,7 @@ class AlexNet():
         # Save the trained model
         torch.save(self.model.state_dict(), self.model_save_path)
         print(f"AlexNet Model saved to {self.model_save_path}")
+        
 
 
     def evaluate(self, data_loader):
