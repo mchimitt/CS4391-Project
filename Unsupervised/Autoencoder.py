@@ -20,7 +20,7 @@ class Autoencoder(nn.Module):
     def __init__(self):
         super(Autoencoder, self).__init__()
         
-        # Encoder
+        # Encoder Model
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),  # Output size: (112, 112)
             nn.ReLU(),
@@ -35,7 +35,7 @@ class Autoencoder(nn.Module):
             nn.ReLU()
         )
 
-        # Decoder
+        # Decoder Model
         self.decoder = nn.Sequential(
             nn.Linear(256, 128 * 14 * 14),
             nn.ReLU(),
@@ -51,22 +51,25 @@ class Autoencoder(nn.Module):
         )
 
     def forward(self, x):
+        # send through the encoder and decoder
         x = self.encoder(x)
         x = self.decoder(x)
         return x
 
     def save_model(self, filepath):
-        """ Save the model to a file """
+        # Save the model to a file
+        # allows us to run the clustering algorithm on the model that is already trained
+        # don't train it more than once because that takes a while
         torch.save(self.state_dict(), filepath)
         print(f"Model saved to {filepath}")
 
     def load_model(self, filepath):
-        """ Load the model from a file """
+        # Load the model from a file
         self.load_state_dict(torch.load(filepath))
         print(f"Model loaded from {filepath}")
 
     def compute_accuracy(self, outputs, targets):
-        """ Compute pixel-level accuracy between outputs and targets """
+        # Compute pixel-level accuracy between outputs and targets 
         outputs = outputs > 0.5  # Apply threshold (since output is between 0 and 1)
         targets = targets > 0.5  # Apply threshold to the original image
         correct = (outputs == targets).sum().item()
@@ -75,37 +78,50 @@ class Autoencoder(nn.Module):
         return accuracy
 
 
+# silhouette score
 def compute_silhouette_score(features, predicted_labels):
     score = silhouette_score(features, predicted_labels)
     return score
 
+# cluster priority
 def cluster_purity(true_labels, predicted_labels):
     cm = confusion_matrix(true_labels, predicted_labels)
     purity = np.sum(np.amax(cm, axis=0)) / np.sum(cm)
     return purity
 
+# ari
 def compute_ari(true_labels, predicted_labels):
     ari = adjusted_rand_score(true_labels, predicted_labels)
     return ari
 
 class UnsupervisedClassification:
     def __init__(self, dir, batch_size, max_train_samples=None, model_path=None):
+        # get the data
         self.train_loader, self.val_loader, self.test_loader, self.num_classes = get_data(dir, batch_size, max_train_samples)
 
+        # setup GPU usage if possible
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.autoencoder = Autoencoder().to(self.device)  # Move model to GPU or CPU
         
+        # Move model to GPU or CPU
+        self.autoencoder = Autoencoder().to(self.device)  
+        
+        # Load pre-trained model if path is provided
         if model_path:
-            self.autoencoder.load_model(model_path)  # Load pre-trained model if path is provided
+            self.autoencoder.load_model(model_path)  
         else:
             self.optimizer = optim.Adam(self.autoencoder.parameters(), lr=0.001)
             self.loss_fn = nn.MSELoss()
 
+    # train the autoencoder
     def train_autoencoder(self, epochs=5):
+        # set to training mode
         self.autoencoder.train()
+        
+        # epoch loop
         for epoch in range(epochs):
             running_loss = 0.0
             running_accuracy = 0.0
+            # loop through the batches
             for data, _ in tqdm(self.train_loader, f"Training Encoder: Epoch {epoch+1}"):
                 data = data.to(self.device)  # Move data to GPU or CPU
                 self.optimizer.zero_grad()
@@ -118,7 +134,7 @@ class UnsupervisedClassification:
                 accuracy = self.autoencoder.compute_accuracy(output, data)
                 running_loss += loss.item()
                 running_accuracy += accuracy
-
+            # get the avg loss and accuracy
             avg_loss = running_loss / len(self.train_loader)
             avg_accuracy = running_accuracy / len(self.train_loader)
 
@@ -127,11 +143,13 @@ class UnsupervisedClassification:
         # Save the trained model after training
         self.autoencoder.save_model("autoencoder_model.pth")
 
+    # extract features using the autoencoder
     def extract_features(self, data_loader):
         self.autoencoder.eval()
         features = []
         true_labels = []
         with torch.no_grad():
+            # loop through the batches
             for data, labels in tqdm(data_loader, "Extracting Features"):
                 data = data.to(self.device)
                 feature = self.autoencoder.encoder(data)
@@ -139,6 +157,7 @@ class UnsupervisedClassification:
                 true_labels.append(labels.numpy())  # Save the true labels for accuracy calculation
         return np.concatenate(features, axis=0), np.concatenate(true_labels, axis=0)
 
+    # classify with kmeans
     def unsupervised_classification(self, data_loader):
         # Extract features and true labels
         features, true_labels = self.extract_features(data_loader)

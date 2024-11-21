@@ -17,22 +17,29 @@ class SqueezeNet():
         self.train_loader, self.val_loader, self.test_loader, num_classes = get_data(dir, batch_size, max_train_samples)
         print("Dataset has been loaded")
 
-        # Initialize the SqueezeNet model and modify the classifier for the dataset's number of classes
-        
+        # Initialize the SqueezeNet model 
+
         ## uncomment this for pretrained weights
         self.model = models.squeezenet1_1(weights=models.SqueezeNet1_1_Weights.DEFAULT)
         
         # uncomment this for no pretrained weights
         # self.model = models.squeezenet1_1()
     
+        # modify the classifier to match the number of classes, set the dropout as well
         self.model.classifier[1] = nn.Sequential(nn.Dropout(dropout), nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1)))
+        
         # self.model.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1))
+        
+        # set the number of classes
         self.model.num_classes = num_classes
         
         # Move model to the specified device (GPU or CPU)
         self.model = self.model.to(self.device)
 
+        # set the number of epochs
         self.num_epochs = num_epochs
+
+        # model save path
         self.model_save_path = save_dir / 'squeezenet_model.pth'
 
         # Set up loss function and optimizer
@@ -44,13 +51,16 @@ class SqueezeNet():
         total_batches = len(self.train_loader)
         start_time = time.time()
 
+        # loop through the epochs
         for epoch in range(self.num_epochs):
             self.model.train()  # Set model to training mode
             running_loss = 0.0
             curr_batch = 1
             
+            # loop through the batches
             for images, labels in tqdm(self.train_loader, desc=f"Training Epoch {epoch + 1}"):
-                # print(f"Batch {curr_batch}/{total_batches}")
+                
+                # send the batches to the GPU if possible
                 images, labels = images.to(self.device), labels.to(self.device)
 
                 # Zero the gradients
@@ -64,6 +74,7 @@ class SqueezeNet():
                 loss.backward()
                 self.optimizer.step()
 
+                # update the loss
                 running_loss += loss.item() * images.size(0)
                 curr_batch += 1
 
@@ -76,6 +87,8 @@ class SqueezeNet():
             print(f"Validation Accuracy: {val_accuracy:.2f}%")
 
         end_time = time.time()
+
+        # get the time it took to train
         elapsed_time = end_time - start_time
         print(f"Training Time: {elapsed_time:.2f} seconds")
 
@@ -89,6 +102,7 @@ class SqueezeNet():
         total = 0
         
         with torch.no_grad():
+            # loop through the batches
             for images, labels in tqdm(data_loader, "Testing"):
                 images, labels = images.to(self.device), labels.to(self.device)
                 outputs = self.model(images)
@@ -96,10 +110,12 @@ class SqueezeNet():
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
+        # get the accuracy
         accuracy = 100 * correct / total
         return accuracy
 
     def test(self):
+        # test the model
         print("Evaluating on test data...")
         test_accuracy = self.evaluate(self.test_loader)
         print(f"Test Accuracy: {test_accuracy:.2f}%")

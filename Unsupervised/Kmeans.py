@@ -20,11 +20,13 @@ class FeatureExtractor():
     def __init__(self):
         # Use a pretrained VGG19 model with batch normalization
         self.model = models.vgg19_bn(weights=models.VGG19_BN_Weights.IMAGENET1K_V1)
+        
         # Remove the classification layer, keep features
+        # we are clustering on the features
         self.model.fc = nn.Identity()
         self.model.eval()
         
-        # Move the model to the device
+        # Move the model to the GPU if possible
         self.model = self.model.to(device)
 
     def extract_features(self, image):
@@ -43,7 +45,11 @@ class KMeansClassifier():
 
         # Fixed number of clusters based on the number of classes
         self.n_clusters = num_classes
+
+        # set the batch size
         self.batch_size = batch_size
+
+        # setup the feature extractor -> sends the batches through the model to get the features 
         self.feature_extractor = FeatureExtractor()
 
         # Instantiate the KMeans model
@@ -53,11 +59,12 @@ class KMeansClassifier():
         all_features = []
         all_labels = []
 
+        # loop through each batch
         for images, labels in tqdm(dataloader, desc="Extracting Features"):
             images = images.to(device)  # Move images to GPU
             labels = labels.to(device)
 
-            # Extract features
+            # Extract features on the batch
             features = self.feature_extractor.extract_features(images)
 
             # Flatten features to 2D array (batch_size, num_features)
@@ -68,23 +75,23 @@ class KMeansClassifier():
         return all_features, np.array(all_labels)
     
     def fit(self):
-        # Extract features from the training set
+        # get the features
         self.train_features, self.train_labels = self.extract(self.train_loader)
 
         # Normalize features using StandardScaler
         scaler = StandardScaler()
         self.train_features = scaler.fit_transform(self.train_features)
 
-        # Reduce dimensionality with PCA (optional: you can change n_components)
+        # Reduce dimensionality with PCA
         pca = PCA(n_components=50)  # Keep more components if necessary
         self.train_features = pca.fit_transform(self.train_features)
 
-        # Fit the KMeans model on the training features
+        # Fit the KMeans model
         print("Fitting KMeans...")
         self.kmeans.fit(self.train_features)
 
     def predict(self):
-        # Use the same PCA and scaler applied during fitting
+        # get the features
         test_features = self.train_features  # Using the same training features for clustering
         
         # Predict cluster labels
@@ -97,11 +104,12 @@ class KMeansClassifier():
 
         # Map clusters to true labels using majority voting
         cluster_to_true_label = {}
+        # loop through each cluster
         for cluster in np.unique(cluster_labels):
             mask = (cluster_labels == cluster)
             most_common = np.bincount(self.train_labels[mask]).argmax()
             cluster_to_true_label[cluster] = most_common
-
+        
         adjusted_labels = [cluster_to_true_label[cluster] for cluster in cluster_labels]
         accuracy = accuracy_score(self.train_labels, adjusted_labels)
         accuracy *= 100  # Convert to percentage
