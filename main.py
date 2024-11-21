@@ -16,6 +16,10 @@ def main():
 
 
     an = AlexNet(data_dir, model_dir, 15000, 512, 30, 0.0001, 5e-4)
+    # Best Hyperparameters: 
+    # train samples: 15000, batch size: 512, epochs: 30, lr: 0.0001, decay: 5e-4
+    # validation accuracy: 57.92%
+    # test accuracy: 58.32%
     an.train()
     an.test()
 
@@ -23,8 +27,8 @@ def main():
     # sn = SqueezeNet(data_dir, model_dir, 15000, 512, 30, 0.0001, 0.5, 5e-4)
     # # Best Hyperparameters: 
     # # train samples: 15000, batch size: 512, epochs: 30, lr: 0.0001, dropout: 0.5, decay: 5e-4
-    # # validation accuracy: 57.92%
-    # # test accuracy: 58.32%
+    # # testing accuracy: 58.65%
+    # # validation accuracy: 59.19%
     # sn.train()
     # sn.test()
 
