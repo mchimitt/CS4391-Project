@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from tqdm import tqdm
 
-class SqueezeNet():
+class ViTNet():
     def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, dropout=0.5, decay=1e-4):
         # Use GPU if available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -26,7 +26,13 @@ class SqueezeNet():
         # self.model = models.vit_b_16()
     
         # Modify the classifier to match the number of classes
-        self.model.heads.head = nn.Linear(self.model.heads.head.in_features, num_classes)
+        # self.model.heads.head = nn.Linear(self.model.heads.head.in_features, num_classes)
+        self.model.heads.head = nn.Sequential(
+            nn.Linear(self.model.heads.head.in_features, 512),  # Intermediate layer
+            nn.BatchNorm1d(512),  # Batch Normalization
+            nn.ReLU(),  # Activation function
+            nn.Linear(512, num_classes)  # Output layer
+        )
 
         # set the number of classes
         self.model.num_classes = num_classes

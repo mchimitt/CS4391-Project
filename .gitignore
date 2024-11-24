@@ -2,3 +2,4 @@ Wikiart/
 *.pyc
 Models/
 Models/Supervised/
+Models/Unsupervised/

@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from tqdm import tqdm
 
-class SqueezeNet():
+class VGGNet():
     def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, dropout=0.5, decay=1e-4):
         # Use GPU if available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,11 +30,11 @@ class SqueezeNet():
 
         self.model.classifier = nn.Sequential(
             nn.Linear(25088, 4096),
+            nn.BatchNorm1d(4096),
             nn.ReLU(inplace=True),
-            nn.Dropout(dropout),
             nn.Linear(4096, 4096),
+            nn.BatchNorm1d(4096),
             nn.ReLU(inplace=True),
-            nn.Dropout(dropout),
             nn.Linear(4096, num_classes)
         )
 
