@@ -165,9 +165,9 @@ def test_model(model, test_loader, device):
 
 def main():
     data_dir = "wiki100/dataset"
-    batch_size = 125
+    batch_size = 128
     max_train_samples = 11000  # Optional: Set None if not limiting samples
-    num_epochs = 40
+    num_epochs = 30
     learning_rate = 0.001
     model_path = "genre_classifier_cnn.pth"
 
