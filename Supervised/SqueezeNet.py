@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from Pipelines.get_data import get_data
 import torch
 import torch.nn as nn
@@ -41,6 +42,17 @@ class SqueezeNet():
 
         # model save path
         self.model_save_path = save_dir / 'squeezenet_model.pth'
+        
+        # stats for plotting graph
+        self.stats = {
+            't': [],
+            'loss': [],
+            'train_acc': [],
+            'val_acc': []
+        }
+        
+        # saved plot name
+        self.plot_file = "squeezeplot.pdf"
 
         # Set up loss function and optimizer
         self.criterion = nn.CrossEntropyLoss()
@@ -56,6 +68,7 @@ class SqueezeNet():
             self.model.train()  # Set model to training mode
             running_loss = 0.0
             curr_batch = 1
+            i = 0
             
             # loop through the batches
             for images, labels in tqdm(self.train_loader, desc=f"Training Epoch {epoch + 1}"):
@@ -70,6 +83,10 @@ class SqueezeNet():
                 outputs = self.model(images)
                 loss = self.criterion(outputs, labels)
 
+                # Add loss to plot
+                self.stats['t'].append(i / len(self.train_loader) + epoch)
+                self.stats['loss'].append(loss.item())
+                
                 # Backward pass and optimize
                 loss.backward()
                 self.optimizer.step()
@@ -77,20 +94,31 @@ class SqueezeNet():
                 # update the loss
                 running_loss += loss.item() * images.size(0)
                 curr_batch += 1
+                i += 1
 
             # Calculate average loss for the epoch
             epoch_loss = running_loss / len(self.train_loader.dataset)
             print(f"Epoch [{epoch + 1}/{self.num_epochs}], Loss: {epoch_loss:.4f}")
 
-            # Validation phase
+            # Training Accuracy and plot
+            train_accuracy = self.evaluate(self.train_loader)
+            print(f"Training Accuracy: {train_accuracy:.2f}%")
+            self.stats['train_acc'].append(train_accuracy)
+            
+            # Validation phase and plot
             val_accuracy = self.evaluate(self.val_loader)
             print(f"Validation Accuracy: {val_accuracy:.2f}%")
+            self.stats['val_acc'].append(val_accuracy)
 
         end_time = time.time()
 
         # get the time it took to train
         elapsed_time = end_time - start_time
         print(f"Training Time: {elapsed_time:.2f} seconds")
+        
+        # Plot stats
+        print(f'Saving plot to {self.plot_file}')
+        self.plot_stats(self.stats, self.plot_file)        
 
         # Save the trained model
         torch.save(self.model.state_dict(), self.model_save_path)
@@ -111,7 +139,7 @@ class SqueezeNet():
                 correct += (predicted == labels).sum().item()
 
         # get the accuracy
-        accuracy = 100 * correct / total
+        accuracy = correct / total
         return accuracy
 
     def test(self):
@@ -119,3 +147,24 @@ class SqueezeNet():
         print("Evaluating on test data...")
         test_accuracy = self.evaluate(self.test_loader)
         print(f"Test Accuracy: {test_accuracy:.2f}%")
+        
+    # Plot the loss and accuracy graphs to the target plot file as a PDF    
+    def plot_stats(self, stats, filename):
+        plt.subplot(1, 2, 1)
+        plt.plot(stats['t'], stats['loss'], 'o', alpha=0.5, ms=4)
+        plt.title('Loss')
+        plt.xlabel('Epoch')
+        loss_xlim = plt.xlim()
+
+        plt.subplot(1, 2, 2)
+        epoch = np.arange(1, 1 + len(stats['train_acc']))
+        plt.plot(epoch, stats['train_acc'], '-o', label='train')
+        plt.plot(epoch, stats['val_acc'], '-o', label='val')
+        plt.xlim(loss_xlim)
+        plt.title('Accuracy')
+        plt.xlabel('Epoch')
+        plt.legend(loc='upper left')
+
+        plt.gcf().set_size_inches(12, 4)
+        plt.savefig(filename, bbox_inches='tight')
+        plt.clf()
