@@ -21,15 +21,15 @@ def main():
     ##                                            SUPERVISED                                              ##                                                    
     ########################################################################################################
 
-    # # AlexNet
-    # print("Running AlexNet")
-    # an = AlexNet(data_dir, model_dir, 15000, 512, 30, 0.0001, 5e-4)
-    # # Best Hyperparameters: 
-    # # train samples: 15000, batch size: 512, epochs: 30, lr: 0.0001, decay: 5e-4
-    # # validation accuracy: 57.92%
-    # # test accuracy: 58.32%
-    # an.train()
-    # an.test()
+    # AlexNet
+    print("Running AlexNet")
+    an = AlexNet(data_dir, model_dir, 15000, 512, 10, 0.0001, 5e-10)
+    # Best Hyperparameters: 
+    # train samples: 15000, batch size: 512, epochs: 30, lr: 0.0001, decay: 5e-4
+    # validation accuracy: 57.92%
+    # test accuracy: 58.32%
+    an.train()
+    an.test()
 
 
     # # SqueezeNet
@@ -54,9 +54,9 @@ def main():
     # vn.train()
     # vn.test()
 
-    vit = ViTNet(data_dir, model_dir, 50000, 32, 3, 0.00001, 0.2, 5e-10)
-    vit.train()
-    vit.test()
+    # vit = ViTNet(data_dir, model_dir, 50000, 32, 3, 0.00001, 0.2, 5e-10)
+    # vit.train()
+    # vit.test()
 
 
     ########################################################################################################

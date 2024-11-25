@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import models
 import time
+import numpy as np
 from tqdm import tqdm
 
 
@@ -43,7 +44,7 @@ class AlexNet():
         }
         
         # saved plot name
-        self.plot_file = "alexplot.pdf"
+        self.plot_file = "./Models/Supervised/alexplot.pdf"
         
         # Set up loss function and optimizer
         self.criterion = nn.CrossEntropyLoss()
@@ -93,12 +94,12 @@ class AlexNet():
             
             # Training Accuracy and plot
             train_accuracy = self.evaluate(self.train_loader)
-            print(f"Training Accuracy: {train_accuracy:.2f}%")
+            print(f"Training Accuracy: {100*train_accuracy:.2f}%")
             self.stats['train_acc'].append(train_accuracy)
             
             # Validation phase and plot
             val_accuracy = self.evaluate(self.val_loader)
-            print(f"Validation Accuracy: {val_accuracy:.2f}%")
+            print(f"Validation Accuracy: {100*val_accuracy:.2f}%")
             self.stats['val_acc'].append(val_accuracy)
         
         end_time = time.time()
@@ -137,7 +138,7 @@ class AlexNet():
         # test the model
         print("Evaluating on test data...")
         test_accuracy = self.evaluate(self.test_loader)
-        print(f"Test Accuracy: {test_accuracy:.2f}%")
+        print(f"Test Accuracy: {100 * test_accuracy:.2f}%")
     
     # Plot the loss and accuracy graphs to the target plot file as a PDF    
     def plot_stats(self, stats, filename):

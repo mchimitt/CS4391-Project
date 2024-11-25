@@ -1,5 +1,5 @@
 Wikiart/
 *.pyc
-Models/
-Models/Supervised/
-Models/Unsupervised/
+# Models/
+Models/Supervised/*.pth
+Models/Unsupervised/*.pth
