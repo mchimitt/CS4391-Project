@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from Pipelines.get_data import get_data
 import torch
 import torch.nn as nn
