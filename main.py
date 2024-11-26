@@ -24,9 +24,9 @@ def main():
     # AlexNet
     # Best Hyperparameters: 
     # train samples: 50000, batch size: 512, epochs: 15, lr: 0.0001, decay: 5e-10
-    # train accuracy:       99.87%
-    # validation accuracy:  75.24%
-    # test accuracy:        74.84%
+    # train accuracy:       99.83%
+    # validation accuracy:  75.28%
+    # test accuracy:        74.14%
     anTrainingSamples = 50000
     anBatchSize = 512
     anEpochs = 15
@@ -41,8 +41,9 @@ def main():
     # SqueezeNet
     # Best Hyperparameters: 
     # train samples: 50000, batch size: 256, epochs: 30, lr: 0.0001, dropout: 0.5, decay: 5e-10
-    # testing accuracy: 58.65%
-    # validation accuracy: 59.19%
+    # training accuracy: 80.58%
+    # testing accuracy: 65.91%
+    # validation accuracy: 65.56%
     print("Running SqueezeNet")
     snTrainingSamples = 50000
     snBatchSize = 256
@@ -58,9 +59,9 @@ def main():
     # VGGNet
     # Best Hyperparameters: 
     # train samples: 50000, batch size: 32, epochs: 10, lr: 0.00001, decay: 5e-10
-    # training accuracy: %
-    # testing accuracy: 64.26%
-    # validation accuracy: 64.26%
+    # training accuracy: 99.82%
+    # testing accuracy: 68.82%
+    # validation accuracy: 68.42%
     print("Running VGGNet")
     vnTrainingSamples = 50000
     vnBatchSize = 32
@@ -75,9 +76,9 @@ def main():
     # Vision Transformer
     # Best Hyperparameters: 
     # train samples: 50000, batch size: 32, epochs: 10, lr: 0.00001, dropout: 0.2, decay: 5e-10
-    # training accuracy: %
-    # testing accuracy: %
-    # validation accuracy: %
+    # training accuracy: 99.53%
+    # validation accuracy: 77.58%
+    # testing accuracy: 76.58%
     vitTrainingSamples = 50000
     vitBatchSize = 32
     vitEpochs = 10
