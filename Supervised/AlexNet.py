@@ -21,6 +21,11 @@ class AlexNet():
 
         # Initialize the AlexNet Model
 
+        self.train_acc = 0.0
+        self.validation_acc = 0.0
+        self.test_acc = 0.0
+
+
         # get the alexnet model
         self.model = models.alexnet(weights=models.AlexNet_Weights.DEFAULT)
         # change the last layer to fit the number of classes that we have
@@ -95,11 +100,13 @@ class AlexNet():
             # Training Accuracy and plot
             train_accuracy = self.evaluate(self.train_loader)
             print(f"Training Accuracy: {100*train_accuracy:.2f}%")
+            self.train_acc = 100 * train_accuracy
             self.stats['train_acc'].append(train_accuracy)
             
             # Validation phase and plot
             val_accuracy = self.evaluate(self.val_loader)
             print(f"Validation Accuracy: {100*val_accuracy:.2f}%")
+            self.val_acc = 100 * val_accuracy
             self.stats['val_acc'].append(val_accuracy)
         
         end_time = time.time()
@@ -138,6 +145,7 @@ class AlexNet():
         # test the model
         print("Evaluating on test data...")
         test_accuracy = self.evaluate(self.test_loader)
+        self.test_acc = 100 * test_accuracy
         print(f"Test Accuracy: {100 * test_accuracy:.2f}%")
     
     # Plot the loss and accuracy graphs to the target plot file as a PDF    

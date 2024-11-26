@@ -22,6 +22,11 @@ class VGGNet():
 
         # Initialize the vgg model
         
+        self.train_acc = 0.0
+        self.validation_acc = 0.0
+        self.test_acc = 0.0
+
+
         # # uncomment this for pretrained weights
         self.model = models.vgg16_bn(weights=models.VGG16_BN_Weights.DEFAULT)
         
@@ -113,11 +118,14 @@ class VGGNet():
             # Training Accuracy and plot
             train_accuracy = self.evaluate(self.train_loader)
             print(f"Training Accuracy: {100 * train_accuracy:.2f}%")
+            self.train_acc = 100 * train_accuracy
+
             self.stats['train_acc'].append(train_accuracy)
             
             # Validation phase and plot
             val_accuracy = self.evaluate(self.val_loader)
             print(f"Validation Accuracy: {100 * val_accuracy:.2f}%")
+            self.val_acc = 100 * val_accuracy
             self.stats['val_acc'].append(val_accuracy)
 
         end_time = time.time()
@@ -156,6 +164,7 @@ class VGGNet():
         # test the model
         print("Evaluating on test data...")
         test_accuracy = self.evaluate(self.test_loader)
+        self.test_acc = 100 * test_accuracy
         print(f"Test Accuracy: {100 * test_accuracy:.2f}%")
         
     # Plot the loss and accuracy graphs to the target plot file as a PDF    
