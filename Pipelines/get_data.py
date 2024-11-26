@@ -38,7 +38,7 @@ class CustomImageDataset(Dataset):
 
         return image, label
 
-def get_data(dir, batch_size, max_train_samples=None):
+def get_data(dir, batch_size, max_train_samples=None, ret_df=None):
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
@@ -85,6 +85,9 @@ def get_data(dir, batch_size, max_train_samples=None):
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+
+        if ret_df != None:
+            return train_loader, val_loader, test_loader, len(class_names), train_df, val_df, test_df
 
         return train_loader, val_loader, test_loader, len(class_names)
 

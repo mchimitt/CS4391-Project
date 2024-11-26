@@ -22,19 +22,20 @@ def main():
     ########################################################################################################
 
     # AlexNet
-    print("Running AlexNet")
-    an = AlexNet(data_dir, model_dir, 15000, 512, 10, 0.0001, 5e-10)
-    # Best Hyperparameters: 
-    # train samples: 15000, batch size: 512, epochs: 30, lr: 0.0001, decay: 5e-4
-    # validation accuracy: 57.92%
-    # test accuracy: 58.32%
-    an.train()
-    an.test()
+    # print("Running AlexNet")
+    # an = AlexNet(data_dir, model_dir, 50000, 512, 15, 0.0001, 5e-10)
+    # # Best Hyperparameters: 
+    # # train samples: 50000, batch size: 512, epochs: 15, lr: 0.0001, decay: 5e-10
+    # # train accuracy:       99.87%
+    # # validation accuracy:  75.24%
+    # # test accuracy:        74.84%
+    # an.train()
+    # an.test()
 
 
     # # SqueezeNet
     # print("Running SqueezeNet")
-    # sn = SqueezeNet(data_dir, model_dir, 15000, 512, 30, 0.0001, 0.5, 5e-4)
+    # sn = SqueezeNet(data_dir, model_dir, 50000, 512, 15, 0.0001, 0.5, 5e-10)
     # # Best Hyperparameters: 
     # # train samples: 15000, batch size: 512, epochs: 30, lr: 0.0001, dropout: 0.5, decay: 5e-4
     # # testing accuracy: 58.65%
@@ -43,9 +44,9 @@ def main():
     # sn.test()
 
 
-    # # VGGNet
+    # VGGNet
     # print("Running VGGNet")
-    # vn = VGGNet(data_dir, model_dir, 20000, 64, 10, 0.00001, 0.05, 5e-6)
+    # vn = VGGNet(data_dir, model_dir, 50000, 32, 10, 0.00001, 0.2, 5e-10)
     # # Best Hyperparameters: 
     # # data_dir, model_dir, 15000, 32, 10, 0.000001, 0.5, 5e-6
     # # train samples: 15000, batch size: 32, epochs: 10, lr: 0.000001, dropout: 0.5, decay: 5e-6
@@ -54,7 +55,7 @@ def main():
     # vn.train()
     # vn.test()
 
-    # vit = ViTNet(data_dir, model_dir, 50000, 32, 3, 0.00001, 0.2, 5e-10)
+    # vit = ViTNet(data_dir, model_dir, 50000, 32, 10, 0.00001, 0.2, 5e-10)
     # vit.train()
     # vit.test()
 
@@ -63,9 +64,9 @@ def main():
     ##                                            UNSUPERVISED                                            ##                                                    
     ########################################################################################################
 
-    # # kmeans
+    # kmeans
     # print("Running K Means Cluster Classification")
-    # km = KMeansClassifier(data_dir, 10000, 1)
+    # km = KMeansClassifier(data_dir, 50000, 1)
     # km.fit()
     # km.evaluate()
 

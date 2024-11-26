@@ -7,9 +7,16 @@ from torchvision import models
 import time
 from pathlib import Path
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import numpy as np
 
 class SqueezeNet():
     def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, dropout=0.5, decay=1e-4):
+        
+        self.train_acc = 0.0
+        self.validation_acc = 0.0
+        self.test_acc = 0.0
+
         # Use GPU if available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
@@ -102,12 +109,14 @@ class SqueezeNet():
 
             # Training Accuracy and plot
             train_accuracy = self.evaluate(self.train_loader)
-            print(f"Training Accuracy: {train_accuracy:.2f}%")
+            print(f"Training Accuracy: {100 * train_accuracy:.2f}%")
+            self.train_acc = 100 * train_accuracy
             self.stats['train_acc'].append(train_accuracy)
             
             # Validation phase and plot
             val_accuracy = self.evaluate(self.val_loader)
-            print(f"Validation Accuracy: {val_accuracy:.2f}%")
+            print(f"Validation Accuracy: {100 * val_accuracy:.2f}%")
+            self.val_acc = 100 * val_accuracy
             self.stats['val_acc'].append(val_accuracy)
 
         end_time = time.time()
@@ -146,10 +155,12 @@ class SqueezeNet():
         # test the model
         print("Evaluating on test data...")
         test_accuracy = self.evaluate(self.test_loader)
-        print(f"Test Accuracy: {test_accuracy:.2f}%")
+        self.test_acc = 100 * test_accuracy
+        print(f"Test Accuracy: {100 * test_accuracy:.2f}%")
         
     # Plot the loss and accuracy graphs to the target plot file as a PDF    
     def plot_stats(self, stats, filename):
+        
         plt.subplot(1, 2, 1)
         plt.plot(stats['t'], stats['loss'], 'o', alpha=0.5, ms=4)
         plt.title('Loss')
@@ -166,5 +177,6 @@ class SqueezeNet():
         plt.legend(loc='upper left')
 
         plt.gcf().set_size_inches(12, 4)
+        plt.title("SqueezeNet")
         plt.savefig(filename, bbox_inches='tight')
         plt.clf()
