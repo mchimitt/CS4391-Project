@@ -59,7 +59,7 @@ class SqueezeNet():
         }
         
         # saved plot name
-        self.plot_file = "squeezeplot.pdf"
+        self.plot_file = "./Models/Supervised/squeezeplot.pdf"
 
         # Set up loss function and optimizer
         self.criterion = nn.CrossEntropyLoss()
@@ -160,7 +160,6 @@ class SqueezeNet():
         
     # Plot the loss and accuracy graphs to the target plot file as a PDF    
     def plot_stats(self, stats, filename):
-        
         plt.subplot(1, 2, 1)
         plt.plot(stats['t'], stats['loss'], 'o', alpha=0.5, ms=4)
         plt.title('Loss')
@@ -175,8 +174,7 @@ class SqueezeNet():
         plt.title('Accuracy')
         plt.xlabel('Epoch')
         plt.legend(loc='upper left')
-
+        plt.suptitle('SqueezeNet')
         plt.gcf().set_size_inches(12, 4)
-        plt.title("SqueezeNet")
         plt.savefig(filename, bbox_inches='tight')
         plt.clf()

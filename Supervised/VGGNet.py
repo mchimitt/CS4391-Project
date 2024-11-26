@@ -62,7 +62,7 @@ class VGGNet():
         }
         
         # saved plot name
-        self.plot_file = "vggplot.pdf"
+        self.plot_file = "./Models/Supervised/vggplot.pdf"
         
         # Set up loss function and optimizer
         self.criterion = nn.CrossEntropyLoss()
@@ -178,6 +178,6 @@ class VGGNet():
 
         
         plt.gcf().set_size_inches(12, 4)
-        plt.title("VGGNet")
+        plt.suptitle("VGGNet")
         plt.savefig(filename, bbox_inches='tight')
         plt.clf()

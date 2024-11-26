@@ -142,7 +142,7 @@ class AlexNet():
     
     # Plot the loss and accuracy graphs to the target plot file as a PDF    
     def plot_stats(self, stats, filename):
-        plt.title("AlexNet")
+        
         plt.subplot(1, 2, 1)
         plt.plot(stats['t'], stats['loss'], 'o', alpha=0.5, ms=4)
         plt.title('Loss')
@@ -158,6 +158,8 @@ class AlexNet():
         plt.xlabel('Epoch')
         plt.legend(loc='upper left')
 
+        plt.suptitle("AlexNet")
+        
         plt.gcf().set_size_inches(12, 4)
         plt.savefig(filename, bbox_inches='tight')
         plt.clf()

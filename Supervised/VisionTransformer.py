@@ -57,7 +57,7 @@ class ViTNet():
         }
         
         # saved plot name
-        self.plot_file = "vitplot.pdf"
+        self.plot_file = "./Models/Supervised/vitplot.pdf"
 
         # Set up loss function and optimizer
         self.criterion = nn.CrossEntropyLoss()
@@ -169,6 +169,8 @@ class ViTNet():
         plt.title('Accuracy')
         plt.xlabel('Epoch')
         plt.legend(loc='upper left')
+
+        plt.suptitle("VisionTransformer")
 
         plt.gcf().set_size_inches(12, 4)
         plt.savefig(filename, bbox_inches='tight')
