@@ -10,7 +10,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 class ViTNet():
-    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, dropout=0.5, decay=1e-4):
+    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=32, num_epochs=10, learn_rate=0.00001, decay=1e-10):
         # Use GPU if available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         

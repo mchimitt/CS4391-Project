@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class VGGNet():
-    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, dropout=0.5, decay=1e-4):
+    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=32, num_epochs=10, learn_rate=0.00001, decay=1e-10):
         # Use GPU if available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
@@ -33,8 +33,6 @@ class VGGNet():
         # uncomment this for no pretrained weights
         # self.model = models.vgg16_bn()
     
-        
-        # self.model.classifier[1] = nn.Sequential(nn.Dropout(dropout), nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1)))
 
         self.model.classifier = nn.Sequential(
             nn.Linear(25088, 4096),

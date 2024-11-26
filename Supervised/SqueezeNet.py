@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class SqueezeNet():
-    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, dropout=0.5, decay=1e-4):
+    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=256, num_epochs=30, learn_rate=0.0001, dropout=0.5, decay=1e-10):
         
         self.train_acc = 0.0
         self.validation_acc = 0.0

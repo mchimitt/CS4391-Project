@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 
 class AlexNet():
-    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, decay=1e-4):
+    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=512, num_epochs=15, learn_rate=0.0001, decay=1e-10):
         # use GPU if one exists and is available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
