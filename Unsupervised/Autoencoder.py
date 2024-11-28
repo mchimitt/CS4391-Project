@@ -15,11 +15,16 @@ from sklearn.metrics import accuracy_score
 from tqdm import tqdm
 
 
-
+# autoencoder class
 class Autoencoder(nn.Module):
     def __init__(self):
         super(Autoencoder, self).__init__()
-        
+
+        # loss values initially
+        self.train_loss = 0.0
+        self.val_loss = 0.0
+        self.test_loss = 0.0
+
         # Encoder Model
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),  # Output size: (112, 112)
@@ -35,7 +40,7 @@ class Autoencoder(nn.Module):
             nn.ReLU()
         )
 
-        # Decoder Model
+        # Decoder Model 
         self.decoder = nn.Sequential(
             nn.Linear(256, 128 * 14 * 14),
             nn.ReLU(),
@@ -52,9 +57,9 @@ class Autoencoder(nn.Module):
 
     def forward(self, x):
         # send through the encoder and decoder
-        x = self.encoder(x)
-        x = self.decoder(x)
-        return x
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return decoded
 
     def save_model(self, filepath):
         # Save the model to a file
@@ -68,37 +73,22 @@ class Autoencoder(nn.Module):
         self.load_state_dict(torch.load(filepath))
         print(f"Model loaded from {filepath}")
 
-    def compute_accuracy(self, outputs, targets):
-        # Compute pixel-level accuracy between outputs and targets 
-        outputs = outputs > 0.5  # Apply threshold (since output is between 0 and 1)
-        targets = targets > 0.5  # Apply threshold to the original image
-        correct = (outputs == targets).sum().item()
-        total_pixels = torch.numel(outputs)
-        accuracy = correct / total_pixels
-        return accuracy
 
 
-# silhouette score
-def compute_silhouette_score(features, predicted_labels):
-    score = silhouette_score(features, predicted_labels)
-    return score
-
-# cluster priority
-def cluster_purity(true_labels, predicted_labels):
-    cm = confusion_matrix(true_labels, predicted_labels)
-    purity = np.sum(np.amax(cm, axis=0)) / np.sum(cm)
-    return purity
-
-# ari
-def compute_ari(true_labels, predicted_labels):
-    ari = adjusted_rand_score(true_labels, predicted_labels)
-    return ari
 
 class UnsupervisedClassification:
     def __init__(self, dir, batch_size, max_train_samples=None, model_path=None):
         # get the data
         self.train_loader, self.val_loader, self.test_loader, self.num_classes = get_data(dir, batch_size, max_train_samples)
-
+        
+        # setting up the variables for accuracy and silhouette score
+        self.train_acc = 0.0
+        self.val_acc = 0.0
+        self.test_acc = 0.0
+        self.train_sil = 0.0
+        self.val_sil = 0.0
+        self.test_sil = 0.0
+        
         # setup GPU usage if possible
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
@@ -120,28 +110,66 @@ class UnsupervisedClassification:
         # epoch loop
         for epoch in range(epochs):
             running_loss = 0.0
-            running_accuracy = 0.0
             # loop through the batches
             for data, _ in tqdm(self.train_loader, f"Training Encoder: Epoch {epoch+1}"):
                 data = data.to(self.device)  # Move data to GPU or CPU
                 self.optimizer.zero_grad()
+                # forward pass
                 output = self.autoencoder(data)
+                # get loss
                 loss = self.loss_fn(output, data)
+                # backward pass
                 loss.backward()
                 self.optimizer.step()
 
-                # Compute accuracy for the current batch
-                accuracy = self.autoencoder.compute_accuracy(output, data)
+                # update loss
                 running_loss += loss.item()
-                running_accuracy += accuracy
-            # get the avg loss and accuracy
+
+            # get the avg loss
             avg_loss = running_loss / len(self.train_loader)
-            avg_accuracy = running_accuracy / len(self.train_loader)
+            val_loss = self.evaluate_reconstruction(self.val_loader)
+            
+            # set the loss values in the autoencoder
+            self.autoencoder.train_loss = avg_loss
+            self.autoencoder.val_loss = val_loss
 
-            print(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}, Accuracy: {avg_accuracy*100:.2f}%")
+            # print the epoch summary
+            print(f"Epoch [{epoch+1}/{epochs}], Training Loss (MSE): {avg_loss:.4f}, Validation Loss (MSE): {val_loss:.4f}")
 
+        # Test on the test data
+        test_loss = self.evaluate_reconstruction(self.test_loader)
+        self.autoencoder.test_loss = test_loss
+
+        # autoencoder summary
+        print(f"Loss (MSE) Summary:\nTraining:      {self.autoencoder.train_loss:.4f}\nValidation:    {self.autoencoder.val_loss:.4f}\nTest:          {self.autoencoder.test_loss:.4f}")
+        
         # Save the trained model after training
-        self.autoencoder.save_model("autoencoder_model.pth")
+        self.autoencoder.save_model("./Models/Unsupervised/autoencoder_model.pth")
+
+    # evaluation function to test the reconstruction loss of the autoencoder
+    def evaluate_reconstruction(self, dataloader):
+        # set to evaluation mode
+        self.autoencoder.eval()
+        # running loss
+        running_loss = 0.0
+        # disable gradient computation
+        with torch.no_grad():
+            # going through each batch
+            for data, _ in dataloader:
+                # send to the GPU if possible
+                data = data.to(self.device)
+                # run through the autoencoder
+                output = self.autoencoder(data)
+                # compute reconstruction loss
+                loss = self.loss_fn(output, data)
+                # add to the running loss
+                running_loss += loss.item()
+        
+        # calculate the avg loss and return it
+        avg_loss = running_loss / len(dataloader)
+        return avg_loss
+    
+    # kmeans part
 
     # extract features using the autoencoder
     def extract_features(self, data_loader):
@@ -178,6 +206,7 @@ class UnsupervisedClassification:
         accuracy = self.calculate_accuracy(predicted_labels, cluster_to_label, true_labels)
         return predicted_labels, accuracy, pca_features
 
+    # looks for the most common true label, to classify the cluster
     def map_clusters_to_labels(self, predicted_labels, true_labels):
         # For each cluster, find the most common true label
         cluster_to_label = {}
@@ -192,6 +221,7 @@ class UnsupervisedClassification:
 
         return cluster_to_label
 
+    # calculates the accuracy!
     def calculate_accuracy(self, predicted_labels, cluster_to_label, true_labels):
         # Map each predicted label to the corresponding true class label
         predicted_true_labels = np.array([cluster_to_label[label] for label in predicted_labels])
@@ -206,38 +236,30 @@ class UnsupervisedClassification:
         val_labels, val_accuracy, val_features = self.unsupervised_classification(self.val_loader)
         test_labels, test_accuracy, test_features = self.unsupervised_classification(self.test_loader)
 
+        self.train_acc = train_accuracy
+        self.val_acc = val_accuracy
+        self.test_acc = test_accuracy
+
         # Print accuracy for each set
         print(f"Train Accuracy: {train_accuracy:.2f}%")
         print(f"Validation Accuracy: {val_accuracy:.2f}%")
         print(f"Test Accuracy: {test_accuracy:.2f}%")
 
-        # # Evaluate Purity and ARI (as before)
-        # true_train_labels = [label for _, label in self.train_loader.dataset]
-        # true_val_labels = [label for _, label in self.val_loader.dataset]
-        # true_test_labels = [label for _, label in self.test_loader.dataset]
 
-        # train_purity = cluster_purity(true_train_labels, train_labels)
-        # val_purity = cluster_purity(true_val_labels, val_labels)
-        # test_purity = cluster_purity(true_test_labels, test_labels)
+        # Silhouette Score
+        train_silhouette = compute_silhouette_score(train_features, train_labels)
+        val_silhouette = compute_silhouette_score(val_features, val_labels)
+        test_silhouette = compute_silhouette_score(test_features, test_labels)
 
-        # print(f"Train Purity: {train_purity}")
-        # print(f"Validation Purity: {val_purity}")
-        # print(f"Test Purity: {test_purity}")
+        self.train_sil = train_silhouette
+        self.val_sil = val_silhouette
+        self.test_sil = test_silhouette
 
-        # # Adjusted Rand Index
-        # train_ari = compute_ari(true_train_labels, train_labels)
-        # val_ari = compute_ari(true_val_labels, val_labels)
-        # test_ari = compute_ari(true_test_labels, test_labels)
+        print(f"Train Silhouette Score: {train_silhouette}")
+        print(f"Validation Silhouette Score: {val_silhouette}")
+        print(f"Test Silhouette Score: {test_silhouette}")
 
-        # print(f"Train ARI: {train_ari}")
-        # print(f"Validation ARI: {val_ari}")
-        # print(f"Test ARI: {test_ari}")
-
-        # # Silhouette Score
-        # train_silhouette = compute_silhouette_score(train_features, train_labels)
-        # val_silhouette = compute_silhouette_score(val_features, val_labels)
-        # test_silhouette = compute_silhouette_score(test_features, test_labels)
-
-        # print(f"Train Silhouette Score: {train_silhouette}")
-        # print(f"Validation Silhouette Score: {val_silhouette}")
-        # print(f"Test Silhouette Score: {test_silhouette}")
+# silhouette score
+def compute_silhouette_score(features, predicted_labels):
+    score = silhouette_score(features, predicted_labels)
+    return score

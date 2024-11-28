@@ -1,4 +1,6 @@
 from pathlib import Path
+import os
+
 from Pipelines.get_data import get_data
 
 from Supervised.AlexNet import AlexNet
@@ -97,16 +99,32 @@ def main():
     ########################################################################################################
 
     # kmeans
-    # print("Running K Means Cluster Classification")
-    # km = KMeansClassifier(data_dir, 50000, 1)
-    # km.fit()
-    # km.evaluate()
+    print("Running K Means Cluster Classification")
+    km_batch_size = 1
+    km_train_samples = 50000
+    km = KMeansClassifier(data_dir, max_train_samples=km_train_samples, batch_size=km_batch_size)
+    km.evaluate()
 
 
-    # # autoencoder
-    # classifier = UnsupervisedClassification(dir=data_dir, batch_size=32) #, model_path='./autoencoder_model.pth')
+    # autoencoder
+    print("Running Kmeans Clustering with an Autoencoder")
+    auto_max_samples = 50000
+    auto_batch_size = 32
+    auto_model_path = './Models/Unsupervised/autoencoder_model.pth'
+    
+    # USING THE TRAINED MODEL (INSTEAD OF RETRAINING IT)
+    classifier = UnsupervisedClassification(dir=data_dir, max_train_samples=auto_max_samples, batch_size=auto_batch_size, model_path=auto_model_path)
+    
+    # # OR RETRAIN THE MODEL AND THEN CLUSTER
+    # classifier = UnsupervisedClassification(dir=data_dir, max_train_samples=auto_max_samples, batch_size=auto_batch_size)
     # classifier.train_autoencoder(epochs=10)
-    # classifier.evaluate()
+
+    classifier.evaluate()
+
+
+
+
+
 
 
     print("\n\n\n================SUPERVISED SUMMARY================\n")
@@ -149,6 +167,37 @@ def main():
     print(f"Testing Accuracy:       {vit.test_acc}%")
 
     print("\n==================================================\n")
+
+
+    print("\n\n\n===============UNSUPERVISED SUMMARY===============\n")
+    print("K Means Clustering")
+    print("Hyperparameters:")
+    print(f"Max Training Samples: {km_train_samples}   --  Batch Size: {km_batch_size}")
+    print("\nACCURACIES")
+    print(f"Training Accuracy:      {km.train_acc}%")
+    print(f"Validation Accuracy:    {km.val_acc}%")
+    print(f"Testing Accuracy:       {km.test_acc}%")
+    print("\nSILHOUETTE SCORES")
+    print(f"Train Silhouette Score: {km.train_sil}")
+    print(f"Validation Silhouette Score: {km.val_sil}")
+    print(f"Test Silhouette Score: {km.test_sil}")
+
+    print("\n\n")
+
+    print("K Means Clustering with an Autoencoder")
+    print("Hyperparameters:")
+    print(f"Max Training Samples: {auto_max_samples}   --  Batch Size: {auto_batch_size}")
+    print("\nACCURACIES")
+    print(f"Training Accuracy:      {classifier.train_acc}%")
+    print(f"Validation Accuracy:    {classifier.val_acc}%")
+    print(f"Testing Accuracy:       {classifier.test_acc}%")
+    print("\nSILHOUETTE SCORES")
+    print(f"Train Silhouette Score: {classifier.train_sil}")
+    print(f"Validation Silhouette Score: {classifier.val_sil}")
+    print(f"Test Silhouette Score: {classifier.test_sil}")
+
+    print("\n==================================================\n")
+
 
 if __name__ == "__main__":
     main()
