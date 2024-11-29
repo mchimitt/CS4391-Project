@@ -124,7 +124,9 @@ Batch Size: 32
 
 **Accuracies**
 Training Accuracy:      21.14%
+
 Validation Accuracy:    21.64%
+
 Testing Accuracy:       20.68%
 
 **Silhouette Scores**
