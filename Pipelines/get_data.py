@@ -13,13 +13,7 @@ from sklearn.utils import shuffle
 
 class CustomImageDataset(Dataset):
     def __init__(self, dataframe, transform=None):
-        """
-        Custom Dataset for loading image data.
-        
-        Parameters:
-        dataframe (pd.DataFrame): DataFrame with columns ['image_path', 'label'].
-        transform (callable, optional): Optional transform to be applied on an image.
-        """
+        # Custom Dataset for loading image data.
         self.dataframe = dataframe
         self.transform = transform
 
@@ -38,7 +32,9 @@ class CustomImageDataset(Dataset):
 
         return image, label
 
+# get the training, validation, and testing loaders
 def get_data(dir, batch_size, max_train_samples=None, ret_df=None):
+        # resize images
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
@@ -48,6 +44,8 @@ def get_data(dir, batch_size, max_train_samples=None, ret_df=None):
         # Load dataset paths and labels into pandas DataFrame
         image_paths = []
         labels = []
+
+        # class names are the directory names
         class_names = os.listdir(dir)
         for class_idx, class_name in enumerate(class_names):
             class_dir = os.path.join(dir, class_name)
@@ -55,6 +53,7 @@ def get_data(dir, batch_size, max_train_samples=None, ret_df=None):
                 image_paths.append(os.path.join(class_dir, img_name))
                 labels.append(class_idx)
         
+        # convert to dataframe
         df = pd.DataFrame({'image_path': image_paths, 'label': labels})
 
         # Stratified Sampling to limit training samples if max_train_samples is specified
@@ -64,7 +63,8 @@ def get_data(dir, batch_size, max_train_samples=None, ret_df=None):
             class_distribution = df['label'].value_counts()
             samples_per_class = max_train_samples // len(class_distribution)
             sampled_df = pd.DataFrame()
-
+            
+            # sample each class equally
             for class_label in class_distribution.index:
                 class_df = df[df['label'] == class_label]
                 sampled_class_df = class_df.sample(min(samples_per_class, len(class_df)), random_state=42)
@@ -86,9 +86,11 @@ def get_data(dir, batch_size, max_train_samples=None, ret_df=None):
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
+        # if you specify, you can return the dataframe (this was mainly used for testing for imbalance)
         if ret_df != None:
             return train_loader, val_loader, test_loader, len(class_names), train_df, val_df, test_df
 
+        # otherwise, return the 3 loaders and the number of classes
         return train_loader, val_loader, test_loader, len(class_names)
 
 

@@ -5,15 +5,15 @@ from PIL import Image
 from tqdm import tqdm
 import random
 
-def augment_to_balance_classes(dataset_dir, augmentation_transforms):
-    """
-    Augment images in the dataset to balance the class distributions.
-    Only augment the minority classes so that each class has the same number of images as the majority class.
+def augment_to_balance_classes(dataset_dir, max_count=None):
+    # Define augmentation transformations (without ToTensor)
+    augmentation_transforms = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(30),
+        transforms.RandomCrop(224, padding=4),
+    ])
 
-    Parameters:
-    dataset_dir (str): Directory containing the dataset with class subdirectories.
-    augmentation_transforms (transforms.Compose): Transformations for image augmentation.
-    """
     # 1. Compute class distributions
     class_counts = Counter()
     for class_name in os.listdir(dataset_dir):
@@ -21,8 +21,10 @@ def augment_to_balance_classes(dataset_dir, augmentation_transforms):
         if os.path.isdir(class_dir):
             class_counts[class_name] = len(os.listdir(class_dir))
     
-    # 2. Find the maximum number of images in any class
-    max_count = max(class_counts.values())
+    if max_count == None:
+        # 2. Find the maximum number of images in any class
+        max_count = max(class_counts.values())
+        print(max_count)
     
     print("Class counts before augmentation:")
     print(class_counts)
@@ -50,17 +52,33 @@ def augment_to_balance_classes(dataset_dir, augmentation_transforms):
                 # Save augmented image with a unique name
                 augmented_img_name = f"aug_{random.randint(1000, 9999)}_{img_name}"
                 augmented_img.save(os.path.join(class_dir, augmented_img_name))
+        
+        elif count > max_count:
+            # Remove images if the count exceeds the limit
+            num_images_to_remove = count - max_count
+            class_dir = os.path.join(dataset_dir, class_name)
+            original_images = os.listdir(class_dir)
+
+            # Ensure we do not attempt to remove more images than available
+            num_images_to_remove = min(num_images_to_remove, len(original_images))
+
+            print(f"Removing {num_images_to_remove} images from class '{class_name}' to reach the limit...")
+            
+            # Shuffle the images and remove the excess ones
+            random.shuffle(original_images)
+
+            for img_name in tqdm(original_images[:num_images_to_remove], desc=f"Removing {class_name}"):
+                img_path = os.path.join(class_dir, img_name)
+                
+                # Try removing the file and check if it exists
+                if os.path.exists(img_path):
+                    os.remove(img_path)
+                else:
+                    print(f"Error: File not found {img_path}")
 
     print("Augmentation complete. Class distributions are now balanced.")
 
-# Define augmentation transformations (without ToTensor)
-augmentation_transforms = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(30),
-    transforms.RandomCrop(224, padding=4),
-])
 
-dataset_dir = './Wikiart/dataset'  # Original dataset path
-
-augment_to_balance_classes(dataset_dir, augmentation_transforms)
+if __name__ == '__main__':
+    dataset_dir = './Wikiart/dataset'  # Original dataset path
+    augment_to_balance_classes(dataset_dir)
