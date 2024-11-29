@@ -35,7 +35,11 @@ This will train 6 models, 4 supervised and 2 unsupervised (this will take a long
 
 ## Summary of our Results
 
+<hr/>
+
 ### Supervised Summary
+
+<hr/>
 
 #### AlexNet
 
@@ -136,6 +140,8 @@ This will train 6 models, 4 supervised and 2 unsupervised (this will take a long
 <hr/>
 
 ### Unsupervised Summary
+
+<hr/>
 
 #### K Means Clustering
 
