@@ -1,5 +1,5 @@
-Wikiart/
+Pipelines/Wikiart/dataset/*
+Pipelines/Wikiart/ExcelSheets/*
 *.pyc
-# Models/
 Models/Supervised/*.pth
 Models/Unsupervised/*.pth

@@ -38,13 +38,22 @@ class FeatureExtractor():
 
 class KMeansClassifier():
     def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', max_train_samples=None, batch_size=128):
-        print("Loading the dataset")
-        # Load the dataset
-        self.train_loader, self.val_loader, self.test_loader, num_classes = get_data(dir, batch_size, max_train_samples)
-        print("Dataset has been loaded")
+                # get the data
+        self.train_loader, self.val_loader, self.test_loader, self.num_classes = get_data(dir, batch_size, max_train_samples)
+        
+        # setting up the variables for accuracy and silhouette score
+        self.train_acc = 0.0
+        self.val_acc = 0.0
+        self.test_acc = 0.0
+        self.train_sil = 0.0
+        self.val_sil = 0.0
+        self.test_sil = 0.0
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
         # Fixed number of clusters based on the number of classes
-        self.n_clusters = num_classes
+        self.n_clusters = self.num_classes
 
         # set the batch size
         self.batch_size = batch_size
@@ -55,13 +64,17 @@ class KMeansClassifier():
         # Instantiate the KMeans model
         self.kmeans = KMeans(n_clusters=self.n_clusters, init='k-means++', random_state=42)
 
-    def extract(self, dataloader):
+
+
+    # extract features
+    def extract_features(self, data_loader):
         all_features = []
         all_labels = []
 
         # loop through each batch
-        for images, labels in tqdm(dataloader, desc="Extracting Features"):
-            images = images.to(device)  # Move images to GPU
+        for images, labels in tqdm(data_loader, desc="Extracting Features"):
+            # Move images and labels to GPU
+            images = images.to(device)  
             labels = labels.to(device)
 
             # Extract features on the batch
@@ -73,50 +86,81 @@ class KMeansClassifier():
 
         all_features = np.vstack(all_features)  # Stack all features vertically (samples, features)
         return all_features, np.array(all_labels)
-    
-    def fit(self):
-        # get the features
-        self.train_features, self.train_labels = self.extract(self.train_loader)
 
-        # Normalize features using StandardScaler
-        scaler = StandardScaler()
-        self.train_features = scaler.fit_transform(self.train_features)
+    # classify with kmeans
+    def kmeans_classify(self, data_loader):
+        # Extract features and true labels
+        features, true_labels = self.extract_features(data_loader)
 
-        # Reduce dimensionality with PCA
-        pca = PCA(n_components=50)  # Keep more components if necessary
-        self.train_features = pca.fit_transform(self.train_features)
+        # Dimensionality reduction using PCA
+        pca = PCA(n_components=50)
+        pca_features = pca.fit_transform(features)
 
-        # Fit the KMeans model
-        print("Fitting KMeans...")
-        self.kmeans.fit(self.train_features)
+        # Clustering using KMeans with the number of clusters equal to the number of classes
+        # kmeans = KMeans(n_clusters=self.num_classes, random_state=42)
+        self.kmeans.fit(pca_features)
+        predicted_labels = self.kmeans.labels_
 
-    def predict(self):
-        # get the features
-        test_features = self.train_features  # Using the same training features for clustering
-        
-        # Predict cluster labels
-        cluster_labels = self.kmeans.predict(test_features)
-        return cluster_labels
+        # Now we map predicted cluster labels to true class labels (using majority voting)
+        cluster_to_label = self.map_clusters_to_labels(predicted_labels, true_labels)
+
+        # Calculate accuracy
+        accuracy = self.calculate_accuracy(predicted_labels, cluster_to_label, true_labels)
+        return predicted_labels, accuracy, pca_features
+
+    # looks for the most common true label, to classify the cluster
+    def map_clusters_to_labels(self, predicted_labels, true_labels):
+        # For each cluster, find the most common true label
+        cluster_to_label = {}
+        for cluster in np.unique(predicted_labels):
+            # Get the true labels for all data points in this cluster
+            cluster_indices = np.where(predicted_labels == cluster)[0]
+            cluster_true_labels = true_labels[cluster_indices]
+            
+            # Find the most frequent true label in this cluster
+            most_common_label = np.bincount(cluster_true_labels).argmax()
+            cluster_to_label[cluster] = most_common_label
+
+        return cluster_to_label
+
+    # calculates the accuracy!
+    def calculate_accuracy(self, predicted_labels, cluster_to_label, true_labels):
+        # Map each predicted label to the corresponding true class label
+        predicted_true_labels = np.array([cluster_to_label[label] for label in predicted_labels])
+
+        # Calculate the accuracy
+        accuracy = accuracy_score(true_labels, predicted_true_labels) * 100
+        return accuracy
 
     def evaluate(self):
-        # Get predictions from the model
-        cluster_labels = self.predict()
+        # Get predicted cluster labels and accuracy for train, val, and test sets
+        train_labels, train_accuracy, train_features = self.kmeans_classify(self.train_loader)
+        val_labels, val_accuracy, val_features = self.kmeans_classify(self.val_loader)
+        test_labels, test_accuracy, test_features = self.kmeans_classify(self.test_loader)
 
-        # Map clusters to true labels using majority voting
-        cluster_to_true_label = {}
-        # loop through each cluster
-        for cluster in np.unique(cluster_labels):
-            mask = (cluster_labels == cluster)
-            most_common = np.bincount(self.train_labels[mask]).argmax()
-            cluster_to_true_label[cluster] = most_common
-        
-        adjusted_labels = [cluster_to_true_label[cluster] for cluster in cluster_labels]
-        accuracy = accuracy_score(self.train_labels, adjusted_labels)
-        accuracy *= 100  # Convert to percentage
-        print(f"Clustering Accuracy: {accuracy:.2f}%")
+        self.train_acc = train_accuracy
+        self.val_acc = val_accuracy
+        self.test_acc = test_accuracy
 
-        # Evaluate clustering quality using Silhouette Score (higher is better)
-        silhouette_avg = silhouette_score(self.train_features, cluster_labels)
-        print(f"Silhouette Score: {silhouette_avg:.4f}")
+        # Print accuracy for each set
+        print(f"Train Accuracy: {train_accuracy:.2f}%")
+        print(f"Validation Accuracy: {val_accuracy:.2f}%")
+        print(f"Test Accuracy: {test_accuracy:.2f}%")
 
-        return accuracy, silhouette_avg
+        # Silhouette Score
+        train_silhouette = compute_silhouette_score(train_features, train_labels)
+        val_silhouette = compute_silhouette_score(val_features, val_labels)
+        test_silhouette = compute_silhouette_score(test_features, test_labels)
+
+        self.train_sil = train_silhouette
+        self.val_sil = val_silhouette
+        self.test_sil = test_silhouette
+
+        print(f"Train Silhouette Score: {train_silhouette}")
+        print(f"Validation Silhouette Score: {val_silhouette}")
+        print(f"Test Silhouette Score: {test_silhouette}")
+
+# silhouette score
+def compute_silhouette_score(features, predicted_labels):
+    score = silhouette_score(features, predicted_labels)
+    return score

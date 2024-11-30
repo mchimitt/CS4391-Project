@@ -7,9 +7,11 @@ from torchvision import models
 import time
 from pathlib import Path
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import numpy as np
 
 class VGGNet():
-    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=128, num_epochs=10, learn_rate=0.001, dropout=0.5, decay=1e-4):
+    def __init__(self, dir='..\\Pipelines\\Wikiart\\dataset', save_dir='Models\\Supervised\\', max_train_samples=None, batch_size=32, num_epochs=10, learn_rate=0.00001, decay=1e-10):
         # Use GPU if available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
@@ -20,14 +22,17 @@ class VGGNet():
 
         # Initialize the vgg model
         
+        self.train_acc = 0.0
+        self.validation_acc = 0.0
+        self.test_acc = 0.0
+
+
         # # uncomment this for pretrained weights
         self.model = models.vgg16_bn(weights=models.VGG16_BN_Weights.DEFAULT)
         
         # uncomment this for no pretrained weights
         # self.model = models.vgg16_bn()
     
-        
-        # self.model.classifier[1] = nn.Sequential(nn.Dropout(dropout), nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1)))
 
         self.model.classifier = nn.Sequential(
             nn.Linear(25088, 4096),
@@ -60,7 +65,7 @@ class VGGNet():
         }
         
         # saved plot name
-        self.plot_file = "vggplot.pdf"
+        self.plot_file = "./Models/Supervised/vggplot.pdf"
         
         # Set up loss function and optimizer
         self.criterion = nn.CrossEntropyLoss()
@@ -110,12 +115,15 @@ class VGGNet():
 
             # Training Accuracy and plot
             train_accuracy = self.evaluate(self.train_loader)
-            print(f"Training Accuracy: {train_accuracy:.2f}%")
+            print(f"Training Accuracy: {100 * train_accuracy:.2f}%")
+            self.train_acc = 100 * train_accuracy
+
             self.stats['train_acc'].append(train_accuracy)
             
             # Validation phase and plot
             val_accuracy = self.evaluate(self.val_loader)
-            print(f"Validation Accuracy: {val_accuracy:.2f}%")
+            print(f"Validation Accuracy: {100 * val_accuracy:.2f}%")
+            self.val_acc = 100 * val_accuracy
             self.stats['val_acc'].append(val_accuracy)
 
         end_time = time.time()
@@ -154,10 +162,12 @@ class VGGNet():
         # test the model
         print("Evaluating on test data...")
         test_accuracy = self.evaluate(self.test_loader)
-        print(f"Test Accuracy: {test_accuracy:.2f}%")
+        self.test_acc = 100 * test_accuracy
+        print(f"Test Accuracy: {100 * test_accuracy:.2f}%")
         
     # Plot the loss and accuracy graphs to the target plot file as a PDF    
     def plot_stats(self, stats, filename):
+        
         plt.subplot(1, 2, 1)
         plt.plot(stats['t'], stats['loss'], 'o', alpha=0.5, ms=4)
         plt.title('Loss')
@@ -173,6 +183,8 @@ class VGGNet():
         plt.xlabel('Epoch')
         plt.legend(loc='upper left')
 
+        
         plt.gcf().set_size_inches(12, 4)
+        plt.suptitle("VGGNet")
         plt.savefig(filename, bbox_inches='tight')
         plt.clf()

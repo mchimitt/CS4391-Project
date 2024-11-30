@@ -4,3 +4,6 @@ tqdm
 kagglehub
 matplotlib
 numpy
+torch
+torchvision
+Pillow
