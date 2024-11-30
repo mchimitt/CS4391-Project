@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -111,6 +112,17 @@ class UnsupervisedClassification:
         else:
             self.optimizer = optim.Adam(self.autoencoder.parameters(), lr=0.001)
             self.loss_fn = nn.MSELoss()
+            
+        # stats for plotting graph
+        self.stats = {
+            't': [],
+            'loss': [],
+            'train_acc': [],
+            'val_acc': []
+        }
+        
+        # saved plot name
+        self.plot_file = "autoencoder.pdf"
 
     # train the autoencoder
     def train_autoencoder(self, epochs=5):
@@ -121,12 +133,19 @@ class UnsupervisedClassification:
         for epoch in range(epochs):
             running_loss = 0.0
             running_accuracy = 0.0
+            i = 0
+            
             # loop through the batches
             for data, _ in tqdm(self.train_loader, f"Training Encoder: Epoch {epoch+1}"):
                 data = data.to(self.device)  # Move data to GPU or CPU
                 self.optimizer.zero_grad()
                 output = self.autoencoder(data)
                 loss = self.loss_fn(output, data)
+                
+                # Add loss to plot
+                self.stats['t'].append(i / len(self.train_loader) + epoch)
+                self.stats['loss'].append(loss.item())
+                
                 loss.backward()
                 self.optimizer.step()
 
@@ -134,12 +153,28 @@ class UnsupervisedClassification:
                 accuracy = self.autoencoder.compute_accuracy(output, data)
                 running_loss += loss.item()
                 running_accuracy += accuracy
+                i += 1
+                
             # get the avg loss and accuracy
             avg_loss = running_loss / len(self.train_loader)
             avg_accuracy = running_accuracy / len(self.train_loader)
+            
+            # Training accuracy and plot
+            _, train_accuracy, _ = self.unsupervised_classification(self.train_loader)
+            print(f"Training Accuracy: {train_accuracy:.2f}%")
+            self.stats['train_acc'].append(train_accuracy)
+            
+            # Validation accuracy and plot
+            _, val_accuracy, _ = self.unsupervised_classification(self.val_loader)
+            print(f"Validation Accuracy: {val_accuracy:.2f}%")
+            self.stats['val_acc'].append(val_accuracy)
 
             print(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}, Accuracy: {avg_accuracy*100:.2f}%")
-
+        
+        # Plot stats
+        print(f'Saving plot to {self.plot_file}')
+        self.plot_stats(self.stats, self.plot_file)
+        
         # Save the trained model after training
         self.autoencoder.save_model("autoencoder_model.pth")
 
@@ -241,3 +276,24 @@ class UnsupervisedClassification:
         # print(f"Train Silhouette Score: {train_silhouette}")
         # print(f"Validation Silhouette Score: {val_silhouette}")
         # print(f"Test Silhouette Score: {test_silhouette}")
+        
+    # Plot the loss and accuracy graphs to the target plot file as a PDF    
+    def plot_stats(self, stats, filename):
+        plt.subplot(1, 2, 1)
+        plt.plot(stats['t'], stats['loss'], 'o', alpha=0.5, ms=4)
+        plt.title('Loss')
+        plt.xlabel('Epoch')
+        loss_xlim = plt.xlim()
+
+        plt.subplot(1, 2, 2)
+        epoch = np.arange(1, 1 + len(stats['train_acc']))
+        plt.plot(epoch, stats['train_acc'], '-o', label='train')
+        plt.plot(epoch, stats['val_acc'], '-o', label='val')
+        plt.xlim(loss_xlim)
+        plt.title('Accuracy')
+        plt.xlabel('Epoch')
+        plt.legend(loc='upper left')
+
+        plt.gcf().set_size_inches(12, 4)
+        plt.savefig(filename, bbox_inches='tight')
+        plt.clf()
