@@ -62,6 +62,7 @@ class Autoencoder(nn.Module):
         decoded = self.decoder(encoded)
         return decoded
 
+
     def save_model(self, filepath):
         # Save the model to a file
         # allows us to run the clustering algorithm on the model that is already trained
@@ -100,7 +101,7 @@ class UnsupervisedClassification:
         if model_path:
             self.autoencoder.load_model(model_path)  
         else:
-            self.optimizer = optim.Adam(self.autoencoder.parameters(), lr=0.001)
+            self.optimizer = optim.Adam(self.autoencoder.parameters(), lr=0.0001)
             self.loss_fn = nn.MSELoss()
             
         # stats for plotting graph
@@ -148,7 +149,7 @@ class UnsupervisedClassification:
                 
             # get the avg loss
             avg_loss = running_loss / len(self.train_loader)
-            avg_accuracy = running_accuracy / len(self.train_loader)
+            # avg_accuracy = running_accuracy / len(self.train_loader)
             
             # Training accuracy and plot
             _, train_accuracy, _ = self.unsupervised_classification(self.train_loader)
@@ -160,11 +161,11 @@ class UnsupervisedClassification:
             print(f"Validation Accuracy: {val_accuracy:.2f}%")
             self.stats['val_acc'].append(val_accuracy)
 
-            print(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}, Accuracy: {avg_accuracy*100:.2f}%")
+            print(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}") #, Accuracy: {avg_accuracy*100:.2f}%")
         
         # Plot stats
         print(f'Saving plot to {self.plot_file}')
-        self.plot_stats(self.stats, self.plot_file)
+        # self.plot_stats(self.stats, self.plot_file)
         
         # Save the trained model after training
         self.autoencoder.save_model("./Models/Unsupervised/autoencoder_model.pth")
@@ -282,12 +283,6 @@ class UnsupervisedClassification:
         print(f"Validation Silhouette Score: {val_silhouette}")
         print(f"Test Silhouette Score: {test_silhouette}")
 
-# silhouette score
-def compute_silhouette_score(features, predicted_labels):
-    score = silhouette_score(features, predicted_labels)
-    return score
-
-        
     # Plot the loss and accuracy graphs to the target plot file as a PDF    
     def plot_stats(self, stats, filename):
         plt.subplot(1, 2, 1)
@@ -308,3 +303,10 @@ def compute_silhouette_score(features, predicted_labels):
         plt.gcf().set_size_inches(12, 4)
         plt.savefig(filename, bbox_inches='tight')
         plt.clf()
+
+# silhouette score
+def compute_silhouette_score(features, predicted_labels):
+    score = silhouette_score(features, predicted_labels)
+    return score
+
+        

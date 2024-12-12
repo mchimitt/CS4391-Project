@@ -112,12 +112,12 @@ def main():
     auto_batch_size = 32
     auto_model_path = './Models/Unsupervised/autoencoder_model.pth'
     
-    # USING THE TRAINED MODEL (INSTEAD OF RETRAINING IT)
-    classifier = UnsupervisedClassification(dir=data_dir, max_train_samples=auto_max_samples, batch_size=auto_batch_size, model_path=auto_model_path)
+    # # USING THE TRAINED MODEL (INSTEAD OF RETRAINING IT)
+    # classifier = UnsupervisedClassification(dir=data_dir, max_train_samples=auto_max_samples, batch_size=auto_batch_size, model_path=auto_model_path)
     
-    # # OR RETRAIN THE MODEL AND THEN CLUSTER
-    # classifier = UnsupervisedClassification(dir=data_dir, max_train_samples=auto_max_samples, batch_size=auto_batch_size)
-    # classifier.train_autoencoder(epochs=10)
+    # OR RETRAIN THE MODEL AND THEN CLUSTER
+    classifier = UnsupervisedClassification(dir=data_dir, max_train_samples=auto_max_samples, batch_size=auto_batch_size)
+    classifier.train_autoencoder(epochs=10)
 
     classifier.evaluate()
 
